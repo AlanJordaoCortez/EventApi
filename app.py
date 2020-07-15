@@ -25,6 +25,30 @@ def get_eventList():
 
     return jsonify({'events': eventList})
 
+@app.route('/calendar/api/v1.0/events/<string:ID>', methods=['GET'])
+def get_oneEvent(ID):
+    cluster = MongoClient("mongodb+srv://Alanjcortez:T574KLirNgSf6n2w@agora-hbyod.mongodb.net/Agora_events?retryWrites=true&w=majority&serverSelectionTimeoutMS=360000")
+    db = cluster["Agora_events"]
+    collection = db["Agora_events"]
+
+    event = { #creates an event based on what's in the body's JSON
+        '_id': "",
+        'name': "",
+        'description': "",
+        'location': "",
+        'organizer': "",
+        'date': ""
+    }
+    results = collection.find({"_id": ObjectId(ID)}) #gets the event with the given ID from database
+    for result in results:
+        result['_id'] = str(result['_id']) #turns the obj id into a string
+        event['name'] = result['name']
+        event['description'] = result['description']
+        event['location'] = result['location']
+        event['organizer'] = result['organizer']
+        event['date'] = result['date']
+         
+    return jsonify({'events': event})
 
 @app.route('/calendar/api/v1.0/events', methods=['POST'])
 def create_event(): 
@@ -47,13 +71,13 @@ def create_event():
     return jsonify({'Message': 'Event added'}), 201
 
 
-@app.route('/calendar/api/v1.0/events/<string:name>', methods=['PUT']) 
-def update_event(name):
+@app.route('/calendar/api/v1.0/events/<string:ID>', methods=['PUT']) 
+def update_event(ID):
     cluster = MongoClient("mongodb+srv://Alanjcortez:T574KLirNgSf6n2w@agora-hbyod.mongodb.net/Agora_events?retryWrites=true&w=majority&serverSelectionTimeoutMS=360000")
     db = cluster["Agora_events"]
     collection = db["Agora_events"]
 
-    result = collection.find_one({"name": name}) #finds the event base 
+    result = collection.find_one({"_id": ObjectId(ID)}) #finds the event base 
     result['_id'] = str(result['_id']) #turns the obj id into a string
     event = {
         'name': request.json.get('name', result['name']),
@@ -64,8 +88,8 @@ def update_event(name):
     }
 
     #updates the event information in the database
-    collection.update_one({"name": name}, {"$set": {"name": event['name'], "description": event['description'], "location": event['location'], "organizer": event['organizer'], "date": event['date']}})
-    return jsonify({'Message': 'Event {} is updated'.format(name)}), 200
+    collection.update_one({"_id": ObjectId(ID)}, {"$set": {"name": event['name'], "description": event['description'], "location": event['location'], "organizer": event['organizer'], "date": event['date']}})
+    return jsonify({'Message': 'Event has been updated'}), 200
 
 
 
